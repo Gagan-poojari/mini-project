@@ -62,7 +62,7 @@ export default function ResultsPage() {
         </div>
 
         {winner && winner.voteCount > 0 && (
-          <div className="mb-8 bg-gradient-to-r from-yellow-100 to-yellow-50 border-2 border-yellow-400 rounded-lg p-6">
+          <div className="mb-8 bg-linear-to-r from-yellow-100 to-yellow-50 border-2 border-yellow-400 rounded-lg p-6">
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-sm font-semibold text-yellow-800 mb-1">
