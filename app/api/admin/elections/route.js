@@ -1,106 +1,77 @@
-import prisma from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
-import { errorResponse, successResponse } from '@/lib/utils';
+import prisma from '@/lib/prisma'
+import { verifyAuth } from '@/lib/auth'
+import { errorResponse, successResponse } from '@/lib/utils'
 
-// Middleware to check admin role
-async function requireAdmin() {
-  const currentUser = await getCurrentUser();
-  
-  if (!currentUser) {
-    return { error: errorResponse('Not authenticated', 401) };
-  }
-  
-  const user = await prisma.user.findUnique({
-    where: { id: currentUser.id },
-  });
-  
-  if (!user || user.role !== 'ADMIN') {
-    return { error: errorResponse('Admin access required', 403) };
-  }
-  
-  return { user };
-}
-
-// GET all elections
+// 🔹 GET all elections (admin view)
 export async function GET() {
   try {
     const elections = await prisma.election.findMany({
       include: {
+        candidates: {
+          include: { party: true },
+        },
         _count: {
-          select: { 
-            candidates: true,
-            votes: true 
-          },
+          select: { candidates: true, votes: true },
         },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+      orderBy: { createdAt: 'desc' },
+    })
 
-    return successResponse(elections);
+    return successResponse(elections)
   } catch (error) {
-    console.error('Get elections error:', error);
-    return errorResponse('Internal server error', 500);
+    console.error('Fetch elections error:', error)
+    return errorResponse('Internal server error', 500)
   }
 }
 
-// POST - Create new election (Admin only)
+// 🔹 POST: Create election with optional candidates
 export async function POST(request) {
-  const authCheck = await requireAdmin();
-  if (authCheck.error) return authCheck.error;
-
   try {
-    const body = await request.json();
-    const { title, description, startDate, endDate } = body;
+    const user = await verifyAuth(request)
+    if (!user) return errorResponse('Unauthorized', 401)
+
+    if (user.role.toLowerCase() !== 'admin') {
+      return errorResponse('Forbidden: Admin access only', 403)
+    }
+
+    const body = await request.json()
+    const { title, description, startDate, endDate, candidates } = body
 
     if (!title || !startDate || !endDate) {
-      return errorResponse('Title, start date, and end date are required');
+      return errorResponse('Title, startDate, and endDate are required', 400)
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-
-    if (end <= start) {
-      return errorResponse('End date must be after start date');
-    }
-
+    // Create election + optional candidates in one go
     const election = await prisma.election.create({
       data: {
         title,
-        description,
-        startDate: start,
-        endDate: end,
+        description: description || '',
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        candidates: candidates?.length
+          ? {
+              create: candidates.map((c) => ({
+                name: c.name,
+                profession: c.profession || '',
+                education: c.education || '',
+                partyId: parseInt(c.partyId),
+              })),
+            }
+          : undefined,
       },
-    });
+      include: {
+        candidates: { include: { party: true } },
+      },
+    })
 
-    return successResponse(election, 'Election created successfully', 201);
+    return successResponse(
+      election,
+      candidates?.length
+        ? `Election created with ${candidates.length} candidate(s)`
+        : 'Election created successfully'
+    )
   } catch (error) {
-    console.error('Create election error:', error);
-    return errorResponse('Internal server error', 500);
-  }
-}
-
-// DELETE election
-export async function DELETE(request) {
-  const authCheck = await requireAdmin();
-  if (authCheck.error) return authCheck.error;
-
-  try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return errorResponse('Election ID is required');
-    }
-
-    await prisma.election.delete({
-      where: { id: parseInt(id) },
-    });
-
-    return successResponse(null, 'Election deleted successfully');
-  } catch (error) {
-    console.error('Delete election error:', error);
-    return errorResponse('Internal server error', 500);
+    console.error('Create election error:', error)
+    return errorResponse('Internal server error', 500)
   }
 }

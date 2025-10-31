@@ -36,13 +36,16 @@ export default function LoginPage() {
       });
 
       const data = await response.json();
+console.log("LOGIN RESPONSE:", data);
 
-      if (data.success) {
-        router.push('/vote');
-        router.refresh();
-      } else {
-        setError(data.message || 'Login failed');
-      }
+  if (data.success && data.data?.redirect) {
+  router.push(data.data.redirect)
+  router.refresh()
+} else {
+  setError(data.message || "Login failed")
+}
+
+
     } catch (err) {
       setError('An error occurred. Please try again.');
     } finally {

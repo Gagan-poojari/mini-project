@@ -1,4 +1,5 @@
 import prisma from '@/lib/prisma';
+import bcrypt from 'bcryptjs';
 import { comparePassword, generateToken, setAuthCookie } from '@/lib/auth';
 import { errorResponse, successResponse } from '@/lib/utils';
 
@@ -20,13 +21,18 @@ export async function POST(request) {
     if (!user) {
       return errorResponse('Invalid email or password', 401);
     }
+console.log("USER FOUND:", user);
+console.log("LOGIN DEBUG - Entered Password:", password);
+console.log("LOGIN DEBUG - Stored Hash:", user.password);
+
+
 
     // Compare password
     const isValidPassword = await comparePassword(password, user.password);
-
     if (!isValidPassword) {
       return errorResponse('Invalid email or password', 401);
     }
+    console.log("LOGIN DEBUG - Compare Result:", isValidPassword);
 
     // Generate token
     const token = generateToken({
@@ -39,11 +45,19 @@ export async function POST(request) {
     // Set cookie
     await setAuthCookie(token);
 
-    // Return user data (exclude password)
+    // Exclude password
     const { password: _, ...userData } = user;
 
+    // 🟢 Determine redirect based on role
+    const redirect =
+      user.role === "ADMIN" ? "/admin" : "/elections";
+
     return successResponse(
-      { user: userData, token },
+      {
+        user: userData,
+        token,
+        redirect,
+      },
       'Login successful'
     );
   } catch (error) {

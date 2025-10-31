@@ -62,6 +62,12 @@ export default function Navbar({ user }) {
                 >
                   Results
                 </Link>
+                 {user && (
+                  <>
+                    <Link href="/elections">Elections</Link>
+                    {user.role === "admin" && <Link href="/admin">Admin</Link>}
+                  </>
+                )}
 
                 <button
                   onClick={handleLogout}
@@ -84,6 +90,7 @@ export default function Navbar({ user }) {
                 >
                   Register
                 </Link>
+               
               </>
             )}
           </div>
