@@ -13,16 +13,16 @@ export async function POST(request) {
     }
 
     // Find user
-    const voter = await prisma.voter.findUnique({
+    const user = await prisma.user.findUnique({
       where: { email },
     });
 
-    if (!voter) {
+    if (!user) {
       return errorResponse('Invalid email or password', 401);
     }
 
     // Compare password
-    const isValidPassword = await comparePassword(password, voter.password);
+    const isValidPassword = await comparePassword(password, user.password);
 
     if (!isValidPassword) {
       return errorResponse('Invalid email or password', 401);
@@ -30,19 +30,20 @@ export async function POST(request) {
 
     // Generate token
     const token = generateToken({
-      id: voter.id,
-      email: voter.email,
-      name: voter.name,
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      name: `${user.fname} ${user.lname}`,
     });
 
     // Set cookie
     await setAuthCookie(token);
 
     // Return user data (exclude password)
-    const { password: _, ...voterData } = voter;
+    const { password: _, ...userData } = user;
 
     return successResponse(
-      { voter: voterData, token },
+      { user: userData, token },
       'Login successful'
     );
   } catch (error) {

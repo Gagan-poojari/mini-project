@@ -5,11 +5,21 @@ import { errorResponse, successResponse, isValidEmail, isValidPassword } from '@
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { name, email, password } = body;
+    const { 
+      fname, 
+      lname, 
+      midName, 
+      city, 
+      dob, 
+      wardNo, 
+      houseNo, 
+      email, 
+      password 
+    } = body;
 
     // Validation
-    if (!name || !email || !password) {
-      return errorResponse('All fields are required');
+    if (!fname || !lname || !city || !dob || !wardNo || !houseNo || !email || !password) {
+      return errorResponse('All required fields must be filled');
     }
 
     if (!isValidEmail(email)) {
@@ -21,7 +31,7 @@ export async function POST(request) {
     }
 
     // Check if user already exists
-    const existingUser = await prisma.voter.findUnique({
+    const existingUser = await prisma.user.findUnique({
       where: { email },
     });
 
@@ -33,32 +43,43 @@ export async function POST(request) {
     const hashedPassword = await hashPassword(password);
 
     // Create user
-    const voter = await prisma.voter.create({
+    const user = await prisma.user.create({
       data: {
-        name,
+        fname,
+        lname,
+        midName,
+        city,
+        dob: new Date(dob),
+        wardNo: parseInt(wardNo),
+        houseNo,
         email,
         password: hashedPassword,
+        role: 'VOTER', // Default role
       },
       select: {
         id: true,
-        name: true,
+        fname: true,
+        lname: true,
         email: true,
-        hasVoted: true,
+        role: true,
+        city: true,
+        wardNo: true,
       },
     });
 
     // Generate token
     const token = generateToken({
-      id: voter.id,
-      email: voter.email,
-      name: voter.name,
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      name: `${user.fname} ${user.lname}`,
     });
 
     // Set cookie
     await setAuthCookie(token);
 
     return successResponse(
-      { voter, token },
+      { user, token },
       'Registration successful',
       201
     );

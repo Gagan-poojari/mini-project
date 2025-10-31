@@ -12,18 +12,20 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }) {
-  // Get current user
   let user = null;
+
   try {
     const currentUser = await getCurrentUser();
     if (currentUser) {
-      const voter = await prisma.voter.findUnique({
+      const voter = await prisma.User.findUnique({
         where: { id: currentUser.id },
         select: {
           id: true,
-          name: true,
+          fname: true,
+          lname: true,
           email: true,
-          hasVoted: true,
+          role: true,
+          votes: true,
         },
       });
       user = voter;

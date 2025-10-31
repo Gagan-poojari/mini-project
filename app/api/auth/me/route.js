@@ -11,22 +11,28 @@ export async function GET() {
     }
 
     // Fetch fresh user data from database
-    const voter = await prisma.voter.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: currentUser.id },
       select: {
         id: true,
-        name: true,
+        fname: true,
+        lname: true,
+        midName: true,
         email: true,
-        hasVoted: true,
+        role: true,
+        city: true,
+        wardNo: true,
+        houseNo: true,
+        dob: true,
         createdAt: true,
       },
     });
 
-    if (!voter) {
+    if (!user) {
       return errorResponse('User not found', 404);
     }
 
-    return successResponse(voter);
+    return successResponse(user);
   } catch (error) {
     console.error('Get current user error:', error);
     return errorResponse('Internal server error', 500);

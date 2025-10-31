@@ -11,60 +11,89 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { candidateId } = body;
+    const { candidateId, electionId } = body;
 
-    if (!candidateId) {
-      return errorResponse('Candidate ID is required');
+    if (!candidateId || !electionId) {
+      return errorResponse('Candidate ID and Election ID are required');
     }
 
-    // Check if voter exists and hasn't voted
-    const voter = await prisma.voter.findUnique({
+    // Check if user exists
+    const user = await prisma.user.findUnique({
       where: { id: currentUser.id },
     });
 
-    if (!voter) {
-      return errorResponse('Voter not found', 404);
+    if (!user) {
+      return errorResponse('User not found', 404);
     }
 
-    if (voter.hasVoted) {
-      return errorResponse('You have already voted', 403);
+    // Check if election exists and is active
+    const election = await prisma.election.findUnique({
+      where: { id: parseInt(electionId) },
+    });
+
+    if (!election) {
+      return errorResponse('Election not found', 404);
     }
 
-    // Check if candidate exists
-    const candidate = await prisma.candidate.findUnique({
-      where: { id: parseInt(candidateId) },
+    const now = new Date();
+    if (now < election.startDate) {
+      return errorResponse('Election has not started yet', 403);
+    }
+
+    if (now > election.endDate) {
+      return errorResponse('Election has ended', 403);
+    }
+
+    // Check if user has already voted in this election
+    const existingVote = await prisma.vote.findUnique({
+      where: {
+        voterId_electionId: {
+          voterId: user.id,
+          electionId: parseInt(electionId),
+        },
+      },
+    });
+
+    if (existingVote) {
+      return errorResponse('You have already voted in this election', 403);
+    }
+
+    // Check if candidate exists and belongs to this election
+    const candidate = await prisma.candidate.findFirst({
+      where: {
+        id: parseInt(candidateId),
+        electionId: parseInt(electionId),
+      },
+      include: {
+        party: true,
+      },
     });
 
     if (!candidate) {
-      return errorResponse('Candidate not found', 404);
+      return errorResponse('Candidate not found in this election', 404);
     }
 
-    // Create vote and update voter in a transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Create vote
-      const vote = await tx.vote.create({
-        data: {
-          voterId: voter.id,
-          candidateId: parseInt(candidateId),
+    // Create vote
+    const vote = await prisma.vote.create({
+      data: {
+        voterId: user.id,
+        electionId: parseInt(electionId),
+        candidateId: parseInt(candidateId),
+      },
+      include: {
+        candidate: {
+          include: {
+            party: true,
+          },
         },
-        include: {
-          candidate: true,
-        },
-      });
-
-      // Update voter's hasVoted status
-      await tx.voter.update({
-        where: { id: voter.id },
-        data: { hasVoted: true },
-      });
-
-      return vote;
+        election: true,
+      },
     });
 
     return successResponse(
       {
-        vote: result,
-        message: `Successfully voted for ${result.candidate.name}`,
+        vote,
+        message: `Successfully voted for ${vote.candidate.name} in ${vote.election.title}`,
       },
       'Vote cast successfully',
       201

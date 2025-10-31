@@ -8,29 +8,71 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model Voter {
+model User {
   id        Int      @id @default(autoincrement())
-  name      String
+  fname     String
+  lname     String
+  midName   String?
+  city      String
+  dob       DateTime
+  wardNo    Int
+  houseNo   String
   email     String   @unique
   password  String
-  hasVoted  Boolean  @default(false)
-  vote      Vote?
+  role      Role     @default(VOTER)
+  votes     Vote[]
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Party {
+  id         Int         @id @default(autoincrement())
+  name       String      @unique
+  shortName  String?
+  logo       String?
+  candidates Candidate[]
+  createdAt  DateTime    @default(now())
 }
 
 model Candidate {
-  id        Int      @id @default(autoincrement())
-  name      String
-  party     String
-  votes     Vote[]
-  createdAt DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  name       String
+  profession String
+  education  String
+  partyId    Int
+  party      Party    @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  electionId Int
+  election   Election @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  votes      Vote[]
+  createdAt  DateTime @default(now())
+}
+
+model Election {
+  id         Int         @id @default(autoincrement())
+  title      String
+  description String?
+  startDate  DateTime
+  endDate    DateTime
+  candidates Candidate[]
+  votes      Vote[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
 }
 
 model Vote {
-  id           Int       @id @default(autoincrement())
-  voterId      Int       @unique
-  candidateId  Int
-  createdAt    DateTime  @default(now())
-  voter        Voter     @relation(fields: [voterId], references: [id], onDelete: Cascade)
-  candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  id          Int       @id @default(autoincrement())
+  voterId     Int
+  electionId  Int
+  candidateId Int
+  createdAt   DateTime  @default(now())
+  voter       User      @relation(fields: [voterId], references: [id], onDelete: Cascade)
+  election    Election  @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([voterId, electionId]) // One vote per election
+}
+
+enum Role {
+  VOTER
+  ADMIN
 }

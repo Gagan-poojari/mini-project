@@ -2,7 +2,7 @@ import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { errorResponse, successResponse } from '@/lib/utils';
 
-export async function GET() {
+export async function GET(request) {
   try {
     const currentUser = await getCurrentUser();
 
@@ -10,25 +10,33 @@ export async function GET() {
       return errorResponse('Not authenticated', 401);
     }
 
-    // Get voter with their vote
-    const voter = await prisma.voter.findUnique({
-      where: { id: currentUser.id },
+    const { searchParams } = new URL(request.url);
+    const electionId = searchParams.get('electionId');
+
+    if (!electionId) {
+      return errorResponse('Election ID is required');
+    }
+
+    // Check if user has voted in this election
+    const vote = await prisma.vote.findUnique({
+      where: {
+        voterId_electionId: {
+          voterId: currentUser.id,
+          electionId: parseInt(electionId),
+        },
+      },
       include: {
-        vote: {
+        candidate: {
           include: {
-            candidate: true,
+            party: true,
           },
         },
       },
     });
 
-    if (!voter) {
-      return errorResponse('Voter not found', 404);
-    }
-
     return successResponse({
-      hasVoted: voter.hasVoted,
-      vote: voter.vote,
+      hasVoted: !!vote,
+      vote: vote,
     });
   } catch (error) {
     console.error('Get vote status error:', error);
