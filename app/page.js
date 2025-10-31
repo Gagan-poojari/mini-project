@@ -76,7 +76,7 @@ export default function Home() {
               <div className="rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10">
                 <div className="relative w-full h-80 sm:h-96 lg:h-[440px] bg-black">
                   <Image
-                    src="/voting-hero.jpg"
+                    src="/voting-hero.png"
                     alt="Online Voting System"
                     fill
                     style={{ objectFit: "cover" }}
