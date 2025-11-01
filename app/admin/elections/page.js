@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import AdminRoute from '@/components/AdminRoute';
-import Link from 'next/link';
+import { useState, useEffect } from "react";
+import AdminRoute from "@/components/AdminRoute";
+import Link from "next/link";
 
 export default function AdminElectionsPage() {
   const [elections, setElections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    startDate: '',
-    endDate: '',
+    title: "",
+    description: "",
+    startDate: "",
+    endDate: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -23,13 +23,13 @@ export default function AdminElectionsPage() {
 
   const fetchElections = async () => {
     try {
-      const response = await fetch('/api/admin/elections');
+      const response = await fetch("/api/admin/elections");
       const data = await response.json();
       if (data.success) {
         setElections(data.data);
       }
     } catch (error) {
-      console.error('Fetch error:', error);
+      console.error("Fetch error:", error);
     } finally {
       setLoading(false);
     }
@@ -38,12 +38,12 @@ export default function AdminElectionsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    setError('');
+    setError("");
 
     try {
-      const response = await fetch('/api/admin/elections', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/admin/elections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
 
@@ -51,24 +51,24 @@ export default function AdminElectionsPage() {
 
       if (data.success) {
         setShowModal(false);
-        setFormData({ title: '', description: '', startDate: '', endDate: '' });
+        setFormData({ title: "", description: "", startDate: "", endDate: "" });
         fetchElections();
       } else {
         setError(data.message);
       }
     } catch (err) {
-      setError('Failed to create election');
+      setError("Failed to create election");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this election?')) return;
+    if (!confirm("Are you sure you want to delete this election?")) return;
 
     try {
-      const response = await fetch(`/api/admin/elections?id=${id}`, {
-        method: 'DELETE',
+      const response = await fetch(`/api/admin/elections/${id}`, {
+        method: "DELETE",
       });
 
       const data = await response.json();
@@ -76,7 +76,7 @@ export default function AdminElectionsPage() {
         fetchElections();
       }
     } catch (error) {
-      console.error('Delete error:', error);
+      console.error("Delete error:", error);
     }
   };
 
@@ -85,9 +85,11 @@ export default function AdminElectionsPage() {
     const start = new Date(election.startDate);
     const end = new Date(election.endDate);
 
-    if (now < start) return { status: 'Upcoming', color: 'bg-yellow-100 text-yellow-800' };
-    if (now > end) return { status: 'Ended', color: 'bg-gray-100 text-gray-800' };
-    return { status: 'Active', color: 'bg-green-100 text-green-800' };
+    if (now < start)
+      return { status: "Upcoming", color: "bg-yellow-100 text-yellow-800" };
+    if (now > end)
+      return { status: "Ended", color: "bg-gray-100 text-gray-800" };
+    return { status: "Active", color: "bg-green-100 text-green-800" };
   };
 
   return (
@@ -96,8 +98,13 @@ export default function AdminElectionsPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-4xl font-bold text-gray-200">Manage Elections</h1>
-              <Link href="/admin" className="text-blue-600 hover:underline mt-2 inline-block">
+              <h1 className="text-4xl font-bold text-gray-200">
+                Manage Elections
+              </h1>
+              <Link
+                href="/admin"
+                className="text-blue-600 hover:underline mt-2 inline-block"
+              >
                 ← Back to Dashboard
               </Link>
             </div>
@@ -120,25 +127,34 @@ export default function AdminElectionsPage() {
               {elections.map((election) => {
                 const statusInfo = getElectionStatus(election);
                 return (
-                  <div key={election.id} className="bg-white/0 text-gray-200 rounded-lg border border-gray-300 shadow p-6">
+                  <div
+                    key={election.id}
+                    className="bg-white/0 text-gray-200 rounded-lg border border-gray-300 shadow p-6"
+                  >
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           <h3 className="text-2xl font-bold text-gray-200">
                             {election.title}
                           </h3>
-                          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${statusInfo.color}`}>
+                          <span
+                            className={`px-3 py-1 rounded-full text-sm font-semibold ${statusInfo.color}`}
+                          >
                             {statusInfo.status}
                           </span>
                         </div>
                         {election.description && (
-                          <p className="text-gray-200 mb-3">{election.description}</p>
+                          <p className="text-gray-200 mb-3">
+                            {election.description}
+                          </p>
                         )}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                           <div>
                             <span className="text-gray-200">Start Date:</span>
                             <p className="font-semibold">
-                              {new Date(election.startDate).toLocaleDateString()}
+                              {new Date(
+                                election.startDate
+                              ).toLocaleDateString()}
                             </p>
                           </div>
                           <div>
@@ -149,11 +165,15 @@ export default function AdminElectionsPage() {
                           </div>
                           <div>
                             <span className="text-gray-500">Candidates:</span>
-                            <p className="font-semibold">{election._count?.candidates || 0}</p>
+                            <p className="font-semibold">
+                              {election._count?.candidates || 0}
+                            </p>
                           </div>
                           <div>
                             <span className="text-gray-500">Total Votes:</span>
-                            <p className="font-semibold">{election._count?.votes || 0}</p>
+                            <p className="font-semibold">
+                              {election._count?.votes || 0}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -200,7 +220,9 @@ export default function AdminElectionsPage() {
                     type="text"
                     required
                     value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g., City Council Election 2025"
                   />
@@ -212,7 +234,9 @@ export default function AdminElectionsPage() {
                   </label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     rows="3"
                     placeholder="Brief description of the election"
@@ -227,7 +251,9 @@ export default function AdminElectionsPage() {
                     type="datetime-local"
                     required
                     value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, startDate: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -240,7 +266,9 @@ export default function AdminElectionsPage() {
                     type="datetime-local"
                     required
                     value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, endDate: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -250,7 +278,7 @@ export default function AdminElectionsPage() {
                     type="button"
                     onClick={() => {
                       setShowModal(false);
-                      setError('');
+                      setError("");
                     }}
                     className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
                   >
@@ -261,7 +289,7 @@ export default function AdminElectionsPage() {
                     disabled={submitting}
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
                   >
-                    {submitting ? 'Creating...' : 'Create Election'}
+                    {submitting ? "Creating..." : "Create Election"}
                   </button>
                 </div>
               </form>

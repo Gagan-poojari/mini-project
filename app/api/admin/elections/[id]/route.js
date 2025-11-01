@@ -3,17 +3,17 @@ import { verifyAuth } from '@/lib/auth'
 import { errorResponse, successResponse } from '@/lib/utils'
 
 // UPDATE election
-export async function PATCH(request, { params }) {
+export async function PATCH(request, context) {
   try {
     const user = await verifyAuth(request)
     if (!user) return errorResponse("Unauthorized", 401)
     if (user.role.toLowerCase() !== "admin") return errorResponse("Forbidden", 403)
 
-    const id = parseInt(params.id)
+    const { id } = await context.params
     const body = await request.json()
 
     const updated = await prisma.election.update({
-      where: { id },
+      where: { id: parseInt(id) },
       data: body,
     })
 
@@ -25,16 +25,16 @@ export async function PATCH(request, { params }) {
 }
 
 // DELETE election
-export async function DELETE(request, { params }) {
+export async function DELETE(request, context) {
   try {
     const user = await verifyAuth(request)
     if (!user) return errorResponse("Unauthorized", 401)
     if (user.role.toLowerCase() !== "admin") return errorResponse("Forbidden", 403)
 
-    const id = parseInt(params.id)
+    const { id } = await context.params
 
     await prisma.election.delete({
-      where: { id },
+      where: { id: parseInt(id) },
     })
 
     return successResponse(null, "Election deleted")
