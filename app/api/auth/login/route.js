@@ -48,7 +48,7 @@ console.log("LOGIN DEBUG - Stored Hash:", user.password);
     // Exclude password
     const { password: _, ...userData } = user;
 
-    // 🟢 Determine redirect based on role
+    // Determine redirect based on role
     const redirect =
       user.role === "ADMIN" ? "/admin" : "/elections";
 

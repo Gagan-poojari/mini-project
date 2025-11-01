@@ -1,51 +1,61 @@
-/// app/elections/page.js
-import Link from "next/link"
+import { prisma } from '@/lib/prisma'
+import Link from 'next/link'
 
 export default async function ElectionsPage() {
-  const baseURL = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"
-
-  const res = await fetch(`${baseURL}/api/elections`, {
-    cache: "no-store",
-    headers: {
-      // this ensures cookies also come
-      Cookie: ""
-    }
+  const elections = await prisma.election.findMany({
+    include: { candidates: true },
   })
 
-  const data = await res.json()
-  const elections = data.success ? data.data : []
-
   return (
-    <div className="text-black max-w-3xl mx-auto py-10 px-5">
-      <h1 className="text-3xl font-bold mb-6 mt-10 ">Ongoing Elections</h1>
-
-      {elections.length === 0 && (
-        <p className="text-gray-900">No elections found.</p>
-      )}
-
-      <div className="space-y-4">
-        {elections.map((e) => (
-          <div key={e.id} className="border rounded-lg p-4 bg-white flex justify-between">
-            <div>
-              <h2 className="text-xl font-semibold">{e.title}</h2>
-              <p className="text-sm text-gray-900">
-                {new Date(e.startDate).toLocaleDateString()} –{" "}
-                {new Date(e.endDate).toLocaleDateString()}
-              </p>
-              <p className="text-sm text-gray-500">
-                {e._count?.candidates || 0} candidates
-              </p>
-            </div>
-
-            <Link
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              href={`/vote?election=${e.id}`}
-            >
-              Vote →
-            </Link>
-          </div>
-        ))}
+    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black text-white py-16 px-6 flex flex-col items-center">
+      {/* Header */}
+      <div className="text-center pb-14">
+        <h1 className="text-5xl font-extrabold bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent tracking-tight">
+          🗳️ Ongoing Elections
+        </h1>
+        <p className="text-gray-400 mt-3 text-lg">
+          View active elections and cast your vote securely.
+        </p>
       </div>
+
+      {/* Elections List */}
+      {elections.length === 0 ? (
+        <p className="text-gray-400 text-lg text-center">
+          No ongoing elections at the moment.
+        </p>
+      ) : (
+        <div className="w-full max-w-6xl grid sm:grid-cols-2 lg:grid-cols-3 gap-10">
+          {elections.map((election) => (
+            <div
+              key={election.id}
+              className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl hover:shadow-purple-500/30 transition-all duration-300 overflow-hidden group"
+            >
+              {/* Glow overlay */}
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-purple-500/10 via-pink-500/10 to-transparent blur-2xl" />
+
+              {/* Card Content */}
+              <div className="relative z-10 p-6 flex flex-col justify-between h-full">
+                <div>
+                  <h2 className="text-2xl font-semibold mb-3 group-hover:text-purple-400 transition-colors">
+                    {election.title}
+                  </h2>
+                  <p className="text-gray-400 text-sm mb-5">
+                    {election.candidates.length} Candidate
+                    {election.candidates.length !== 1 && 's'}
+                  </p>
+                </div>
+
+                <Link
+                  href={`/vote?election=${election.id}`}
+                  className="inline-block text-center w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 hover:from-purple-600 hover:to-pink-500 text-white font-medium py-2.5 rounded-xl transition-transform duration-200 hover:scale-105 shadow-lg"
+                >
+                  Vote Now →
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

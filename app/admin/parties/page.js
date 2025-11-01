@@ -1,213 +1,236 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from 'react';
+import AdminRoute from '@/components/AdminRoute';
+import Link from 'next/link';
+import { PlusCircle, Trash2 } from 'lucide-react';
 
 export default function AdminPartiesPage() {
-  const router = useRouter();
   const [parties, setParties] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState(null);
-  const [editRow, setEditRow] = useState({});
-  const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
-  const [message, setMessage] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({ name: '', shortName: '', logo: '' });
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    loadParties();
+    fetchParties();
   }, []);
 
-  async function loadParties() {
-    setLoading(true);
-    setMessage("");
+  const fetchParties = async () => {
     try {
-      const res = await fetch("/api/admin/parties", { credentials: "include" });
-      if (res.status === 401 || res.status === 403) {
-        router.push("/login");
-        return;
-      }
-      const data = await res.json();
-      setParties(data.success ? data.data : []);
-    } catch (err) {
-      console.error("Load parties error:", err);
-      setMessage("Failed to load parties");
+      const response = await fetch('/api/admin/parties');
+      const data = await response.json();
+      if (data.success) setParties(data.data);
+    } catch (error) {
+      console.error('Fetch error:', error);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  function startEdit(party) {
-    setEditingId(party.id);
-    setEditRow({ name: party.name || "", shortName: party.shortName || "", logo: party.logo || "" });
-    setMessage("");
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError('');
 
-  function cancelEdit() {
-    setEditingId(null);
-    setEditRow({});
-    setMessage("");
-  }
-
-  function updateField(field, value) {
-    setEditRow((s) => ({ ...s, [field]: value }));
-  }
-
-  async function saveEdit(id) {
-    setSaving(true);
-    setMessage("");
     try {
-      if (!editRow.name) {
-        setMessage("Party name is required.");
-        setSaving(false);
-        return;
-      }
-
-      const res = await fetch(`/api/admin/parties/${id}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: editRow.name, shortName: editRow.shortName, logo: editRow.logo }),
+      const response = await fetch('/api/admin/parties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
       });
 
-      if (res.status === 401 || res.status === 403) {
-        setMessage("Unauthorized. Please login as admin.");
-        setSaving(false);
-        return;
+      const data = await response.json();
+      if (data.success) {
+        setShowModal(false);
+        setFormData({ name: '', shortName: '', logo: '' });
+        fetchParties();
+      } else {
+        setError(data.message);
       }
-
-      const data = await res.json();
-      if (!data.success) {
-        setMessage(data.message || "Failed to update party");
-        setSaving(false);
-        return;
-      }
-
-      setParties((prev) => prev.map((p) => (p.id === id ? data.data : p)));
-      setMessage("Party updated");
-      setEditingId(null);
-      setEditRow({});
-    } catch (err) {
-      console.error("Save party error:", err);
-      setMessage("Server error while updating");
+    } catch {
+      setError('Failed to create party');
     } finally {
-      setSaving(false);
+      setSubmitting(false);
     }
-  }
+  };
 
-  async function handleDelete(id) {
-    if (!confirm("Delete party? This will also remove its candidates.")) return;
-    setDeletingId(id);
-    setMessage("");
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure? This will delete all associated candidates!')) return;
     try {
-      const res = await fetch(`/api/admin/parties/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-
-      if (res.status === 401 || res.status === 403) {
-        setMessage("Unauthorized. Please login as admin.");
-        setDeletingId(null);
-        return;
-      }
-
-      const data = await res.json();
-      if (!data.success) {
-        setMessage(data.message || "Failed to delete party");
-        setDeletingId(null);
-        return;
-      }
-
-      setParties((prev) => prev.filter((p) => p.id !== id));
-      setMessage("Party deleted");
-    } catch (err) {
-      console.error("Delete party error:", err);
-      setMessage("Server error while deleting party");
-    } finally {
-      setDeletingId(null);
+      const response = await fetch(`/api/admin/parties?id=${id}`, { method: 'DELETE' });
+      const data = await response.json();
+      if (data.success) fetchParties();
+    } catch (error) {
+      console.error('Delete error:', error);
     }
-  }
+  };
 
   return (
-    <div className="mt-10 text-black max-w-4xl mx-auto py-10 px-4">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">Manage Parties</h1>
-        <div className="flex gap-2">
-          <Link href="/admin" className="px-3 py-2 border rounded">
-            Dashboard
-          </Link>
-          <Link href="/admin/parties/create" className="px-3 py-2 bg-green-600 text-white rounded">
-            + Create Party
-          </Link>
-        </div>
-      </div>
+    <AdminRoute>
+      <div className="min-h-screen bg-gray-50 py-12 px-6 lg:px-10">
+        <div className="max-w-7xl mx-auto">
+          {/* Header Section */}
+          <div className="flex justify-between items-center mb-10">
+            <div>
+              <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">Manage Parties</h1>
+              <Link
+                href="/admin"
+                className="inline-block text-blue-600 hover:text-blue-700 font-medium mt-2"
+              >
+                ← Back to Dashboard
+              </Link>
+            </div>
 
-      {message && <div className="mb-4 p-3 bg-gray-50 rounded text-sm">{message}</div>}
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-3 rounded-xl font-semibold shadow-md hover:shadow-lg transition-all duration-300"
+            >
+              <PlusCircle size={20} />
+              Add Party
+            </button>
+          </div>
 
-      {loading ? (
-        <div className="text-center py-10">Loading parties...</div>
-      ) : parties.length === 0 ? (
-        <div className="text-gray-600">No parties found.</div>
-      ) : (
-        <div className="bg-white shadow rounded overflow-hidden">
-          <table className="w-full table-auto">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="text-left px-4 py-3">Name</th>
-                <th className="text-left px-4 py-3">Short Name</th>
-                <th className="text-left px-4 py-3">Candidates</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {parties.map((p) => (
-                <tr key={p.id} className="border-t">
-                  <td className="px-4 py-3 w-1/3">
-                    {editingId === p.id ? (
-                      <input value={editRow.name} onChange={(e) => updateField("name", e.target.value)} className="w-full border rounded px-2 py-1" />
-                    ) : (
-                      <div className="font-medium">{p.name}</div>
+          {/* Content Section */}
+          {loading ? (
+            <div className="text-center py-12 text-gray-600 animate-pulse">Loading...</div>
+          ) : parties.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-md p-12 text-center border border-gray-100">
+              <p className="text-gray-500 text-lg">No parties registered yet</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {parties.map((party) => (
+                <div
+                  key={party.id}
+                  className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 p-6 flex flex-col justify-between"
+                >
+                  <div>
+                    {party.logo && (
+                      <div className="flex justify-center mb-4">
+                        <img
+                          src={party.logo}
+                          alt={`${party.name} logo`}
+                          className="w-20 h-20 object-contain rounded-full border border-gray-200 p-2 bg-gray-50"
+                        />
+                      </div>
                     )}
-                  </td>
+                    <div className="text-center">
+                      <h3 className="text-xl font-bold text-gray-900 mb-1">{party.name}</h3>
+                      {party.shortName && (
+                        <p className="text-green-600 font-medium">({party.shortName})</p>
+                      )}
+                    </div>
 
-                  <td className="px-4 py-3">
-                    {editingId === p.id ? (
-                      <input value={editRow.shortName} onChange={(e) => updateField("shortName", e.target.value)} className="w-full border rounded px-2 py-1" />
-                    ) : (
-                      <div>{p.shortName || "-"}</div>
-                    )}
-                  </td>
+                    <div className="mt-4 space-y-2 text-sm text-gray-600">
+                      <div className="flex justify-between">
+                        <span>Candidates:</span>
+                        <span className="font-semibold text-gray-800">
+                          {party._count?.candidates || 0}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Created:</span>
+                        <span className="font-semibold text-gray-800">
+                          {new Date(party.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-                  <td className="px-4 py-3">{p._count?.candidates ?? 0}</td>
-
-                  <td className="px-4 py-3 text-right space-x-2">
-                    {editingId === p.id ? (
-                      <>
-                        <button onClick={() => saveEdit(p.id)} disabled={saving} className="px-3 py-1 bg-blue-600 text-white rounded">
-                          {saving ? "Saving..." : "Save"}
-                        </button>
-                        <button onClick={cancelEdit} className="px-3 py-1 bg-gray-100 rounded">
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button onClick={() => startEdit(p)} className="px-3 py-1 bg-yellow-100 rounded">
-                          Edit
-                        </button>
-                        <button onClick={() => handleDelete(p.id)} disabled={deletingId === p.id} className="px-3 py-1 bg-red-600 text-white rounded">
-                          {deletingId === p.id ? "Deleting..." : "Delete"}
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
+                  <button
+                    onClick={() => handleDelete(party.id)}
+                    className="mt-6 flex items-center justify-center gap-2 text-red-600 hover:bg-red-50 py-2.5 rounded-lg border border-red-200 font-medium transition-all duration-300"
+                  >
+                    <Trash2 size={18} />
+                    Delete
+                  </button>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          )}
         </div>
-      )}
-    </div>
+
+        {/* Add Party Modal */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-gray-100 animate-fadeIn">
+              <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+                Add New Party
+              </h2>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Party Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="e.g., Progressive Democratic Party"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Short Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.shortName}
+                    onChange={(e) => setFormData({ ...formData, shortName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="e.g., PDP"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Logo URL (optional)
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.logo}
+                    onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    placeholder="https://example.com/logo.png"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      setError('');
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 shadow-md hover:shadow-lg transition disabled:bg-gray-400"
+                  >
+                    {submitting ? 'Adding...' : 'Add Party'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+      </div>
+    </AdminRoute>
   );
 }

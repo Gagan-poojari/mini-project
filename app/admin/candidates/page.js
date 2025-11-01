@@ -1,310 +1,310 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useState, useEffect } from 'react';
+import AdminRoute from '@/components/AdminRoute';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AdminCandidatesPage() {
-  const router = useRouter();
   const [candidates, setCandidates] = useState([]);
-  const [parties, setParties] = useState([]);
   const [elections, setElections] = useState([]);
+  const [parties, setParties] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState(null);
-  const [editRow, setEditRow] = useState({});
-  const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
-  const [message, setMessage] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [selectedElection, setSelectedElection] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    profession: '',
+    education: '',
+    partyId: '',
+    electionId: '',
+  });
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    loadAll();
+    fetchData();
   }, []);
 
-  async function loadAll() {
-    setLoading(true);
-    setMessage("");
+  const fetchData = async () => {
     try {
-      const [candRes, partiesRes, electionsRes] = await Promise.all([
-        fetch("/api/admin/candidates", { credentials: "include" }),
-        fetch("/api/admin/parties", { credentials: "include" }),
-        fetch("/api/admin/elections", { credentials: "include" }),
+      const [candidatesRes, electionsRes, partiesRes] = await Promise.all([
+        fetch('/api/admin/candidates'),
+        fetch('/api/admin/elections'),
+        fetch('/api/admin/parties'),
       ]);
 
-      if (candRes.status === 401 || candRes.status === 403) {
-        router.push("/login");
-        return;
-      }
+      const candidatesData = await candidatesRes.json();
+      const electionsData = await electionsRes.json();
+      const partiesData = await partiesRes.json();
 
-      const candPayload = await candRes.json();
-      const partiesPayload = await partiesRes.json();
-      const electionsPayload = await electionsRes.json();
-
-      setCandidates(candPayload.success ? candPayload.data : []);
-      setParties(partiesPayload.success ? partiesPayload.data : []);
-      setElections(electionsPayload.success ? electionsPayload.data : []);
-    } catch (err) {
-      console.error("Load admin lists error:", err);
-      setMessage("Failed to load admin data.");
+      if (candidatesData.success) setCandidates(candidatesData.data);
+      if (electionsData.success) setElections(electionsData.data);
+      if (partiesData.success) setParties(partiesData.data);
+    } catch (error) {
+      console.error('Fetch error:', error);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  function startEdit(candidate) {
-    setEditingId(candidate.id);
-    setEditRow({
-      name: candidate.name ?? "",
-      profession: candidate.profession ?? "",
-      education: candidate.education ?? "",
-      partyId: candidate.party?.id ?? candidate.partyId ?? "",
-      electionId: candidate.election?.id ?? candidate.electionId ?? "",
-    });
-    setMessage("");
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError('');
 
-  function cancelEdit() {
-    setEditingId(null);
-    setEditRow({});
-    setMessage("");
-  }
-
-  function updateField(field, value) {
-    setEditRow((s) => ({ ...s, [field]: value }));
-  }
-
-  async function saveEdit(id) {
-    setSaving(true);
-    setMessage("");
     try {
-      // basic validation
-      if (!editRow.name || !editRow.partyId || !editRow.electionId) {
-        setMessage("Name, Party and Election are required.");
-        setSaving(false);
-        return;
-      }
-
-      const payload = {
-        name: editRow.name,
-        profession: editRow.profession,
-        education: editRow.education,
-        partyId: Number(editRow.partyId),
-        electionId: Number(editRow.electionId),
-      };
-
-      const res = await fetch(`/api/admin/candidates/${id}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+      const response = await fetch('/api/admin/candidates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
       });
 
-      if (res.status === 401 || res.status === 403) {
-        setMessage("Unauthorized. Please login as admin.");
-        setSaving(false);
-        return;
-      }
+      const data = await response.json();
 
-      const data = await res.json();
-      if (!data.success) {
-        setMessage(data.message || "Failed to update candidate");
-        setSaving(false);
-        return;
+      if (data.success) {
+        setShowModal(false);
+        setFormData({
+          name: '',
+          profession: '',
+          education: '',
+          partyId: '',
+          electionId: '',
+        });
+        fetchData();
+      } else {
+        setError(data.message);
       }
-
-      // update local list
-      setCandidates((prev) => prev.map((c) => (c.id === id ? data.data : c)));
-      setMessage("Candidate updated");
-      setEditingId(null);
-      setEditRow({});
-    } catch (err) {
-      console.error("Save candidate error:", err);
-      setMessage("Server error while saving candidate");
+    } catch {
+      setError('Failed to create candidate');
     } finally {
-      setSaving(false);
+      setSubmitting(false);
     }
-  }
+  };
 
-  async function handleDelete(id) {
-    if (!confirm("Delete candidate? This will remove the candidate.")) return;
-    setDeletingId(id);
-    setMessage("");
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this candidate?')) return;
+
     try {
-      const res = await fetch(`/api/admin/candidates/${id}`, {
-        method: "DELETE",
-        credentials: "include",
+      const response = await fetch(`/api/admin/candidates?id=${id}`, {
+        method: 'DELETE',
       });
 
-      if (res.status === 401 || res.status === 403) {
-        setMessage("Unauthorized. Please login as admin.");
-        setDeletingId(null);
-        return;
-      }
-
-      const data = await res.json();
-      if (!data.success) {
-        setMessage(data.message || "Failed to delete candidate");
-        setDeletingId(null);
-        return;
-      }
-
-      setCandidates((prev) => prev.filter((c) => c.id !== id));
-      setMessage("Candidate deleted");
-    } catch (err) {
-      console.error("Delete candidate error:", err);
-      setMessage("Server error while deleting candidate");
-    } finally {
-      setDeletingId(null);
+      const data = await response.json();
+      if (data.success) fetchData();
+    } catch (error) {
+      console.error('Delete error:', error);
     }
-  }
+  };
+
+  const filteredCandidates = selectedElection
+    ? candidates.filter((c) => c.electionId === parseInt(selectedElection))
+    : candidates;
 
   return (
-    <div className="mt-10 text-black max-w-6xl mx-auto py-10 px-4">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">Manage Candidates</h1>
-        <div className="flex gap-2">
-          <Link href="/admin" className="px-3 py-2 border rounded">
-            Dashboard
-          </Link>
-          <Link href="/admin/candidates/create" className="px-3 py-2 bg-green-600 text-white rounded">
-            + Create Candidate
-          </Link>
-        </div>
-      </div>
+    <AdminRoute>
+      <div className="min-h-screen bg-linear-to-br from-gray-50 via-purple-50 to-white py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+                Manage Candidates
+              </h1>
+              <Link href="/admin" className="text-blue-600 hover:underline mt-2 inline-block">
+                ← Back to Dashboard
+              </Link>
+            </div>
 
-      {message && <div className="mb-4 p-3 bg-gray-50 rounded text-sm">{message}</div>}
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-purple-300 transition"
+            >
+              + Add Candidate
+            </button>
+          </div>
 
-      {loading ? (
-        <div className="text-center py-10">Loading...</div>
-      ) : candidates.length === 0 ? (
-        <div className="text-gray-600">No candidates found.</div>
-      ) : (
-        <div className="bg-white shadow rounded overflow-hidden">
-          <table className="w-full table-auto">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="text-left px-4 py-3">Name</th>
-                <th className="text-left px-4 py-3">Profession</th>
-                <th className="text-left px-4 py-3">Education</th>
-                <th className="text-left px-4 py-3">Party</th>
-                <th className="text-left px-4 py-3">Election</th>
-                <th className="px-4 py-3">Votes</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {candidates.map((c) => (
-                <tr key={c.id} className="border-t">
-                  <td className="px-4 py-3 w-1/4">
-                    {editingId === c.id ? (
-                      <input
-                        value={editRow.name}
-                        onChange={(e) => updateField("name", e.target.value)}
-                        className="w-full border rounded px-2 py-1"
-                      />
-                    ) : (
-                      <div className="font-medium">{c.name}</div>
-                    )}
-                  </td>
-
-                  <td className="px-4 py-3">
-                    {editingId === c.id ? (
-                      <input
-                        value={editRow.profession}
-                        onChange={(e) => updateField("profession", e.target.value)}
-                        className="w-full border rounded px-2 py-1"
-                      />
-                    ) : (
-                      <div>{c.profession}</div>
-                    )}
-                  </td>
-
-                  <td className="px-4 py-3">
-                    {editingId === c.id ? (
-                      <input
-                        value={editRow.education}
-                        onChange={(e) => updateField("education", e.target.value)}
-                        className="w-full border rounded px-2 py-1"
-                      />
-                    ) : (
-                      <div>{c.education}</div>
-                    )}
-                  </td>
-
-                  <td className="px-4 py-3">
-                    {editingId === c.id ? (
-                      <select
-                        value={editRow.partyId}
-                        onChange={(e) => updateField("partyId", e.target.value)}
-                        className="w-full border rounded px-2 py-1"
-                      >
-                        <option value="">Select Party</option>
-                        {parties.map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.name}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div>{c.party?.name ?? "-"}</div>
-                    )}
-                  </td>
-
-                  <td className="px-4 py-3">
-                    {editingId === c.id ? (
-                      <select
-                        value={editRow.electionId}
-                        onChange={(e) => updateField("electionId", e.target.value)}
-                        className="w-full border rounded px-2 py-1"
-                      >
-                        <option value="">Select Election</option>
-                        {elections.map((ev) => (
-                          <option key={ev.id} value={ev.id}>
-                            {ev.title}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div>{c.election?.title ?? "-"}</div>
-                    )}
-                  </td>
-
-                  <td className="px-4 py-3 text-center">{c._count?.votes ?? 0}</td>
-
-                  <td className="px-4 py-3 text-right space-x-2">
-                    {editingId === c.id ? (
-                      <>
-                        <button
-                          onClick={() => saveEdit(c.id)}
-                          disabled={saving}
-                          className="px-3 py-1 bg-blue-600 text-white rounded"
-                        >
-                          {saving ? "Saving..." : "Save"}
-                        </button>
-                        <button onClick={cancelEdit} className="px-3 py-1 bg-gray-100 rounded">
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button onClick={() => startEdit(c)} className="px-3 py-1 bg-yellow-100 rounded">
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(c.id)}
-                          disabled={deletingId === c.id}
-                          className="px-3 py-1 bg-red-600 text-white rounded"
-                        >
-                          {deletingId === c.id ? "Deleting..." : "Delete"}
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
+          {/* Filter */}
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Filter by Election
+            </label>
+            <select
+              value={selectedElection}
+              onChange={(e) => setSelectedElection(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="">All Elections</option>
+              {elections.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.title}
+                </option>
               ))}
-            </tbody>
-          </table>
+            </select>
+          </div>
+
+          {/* Candidates */}
+          {loading ? (
+            <div className="text-center py-16 text-gray-500">Loading candidates...</div>
+          ) : filteredCandidates.length === 0 ? (
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-md p-12 text-center border border-gray-100">
+              <p className="text-gray-500 text-lg">
+                No candidates found yet. Add your first candidate!
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredCandidates.map((candidate) => (
+                <motion.div
+                  key={candidate.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white/80 backdrop-blur-sm border border-gray-100 shadow-md hover:shadow-lg rounded-2xl p-6 transition-all duration-300"
+                >
+                  <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                    {candidate.name}
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-4">{candidate.profession}</p>
+
+                  <div className="space-y-1 text-sm">
+                    <p>
+                      <span className="font-medium text-gray-600">Education:</span>{' '}
+                      {candidate.education}
+                    </p>
+                    <p>
+                      <span className="font-medium text-gray-600">Party:</span>{' '}
+                      {candidate.party.name}{' '}
+                      {candidate.party.shortName && `(${candidate.party.shortName})`}
+                    </p>
+                    <p>
+                      <span className="font-medium text-gray-600">Election:</span>{' '}
+                      {candidate.election.title}
+                    </p>
+                    <p className="text-purple-700 font-semibold">
+                      Votes: {candidate._count?.votes || 0}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => handleDelete(candidate.id)}
+                    className="mt-4 w-full border border-red-200 text-red-600 font-semibold py-2 rounded-lg hover:bg-red-50 transition"
+                  >
+                    Delete
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
-    </div>
+
+        {/* Modal */}
+        <AnimatePresence>
+          {showModal && (
+            <motion.div
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <motion.div
+                className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md"
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+              >
+                <h2 className="text-2xl font-bold mb-6 text-gray-800">
+                  Add New Candidate
+                </h2>
+
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+                    {error}
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {['name', 'profession', 'education'].map((field) => (
+                    <div key={field}>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1 capitalize">
+                        {field} *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData[field]}
+                        onChange={(e) =>
+                          setFormData({ ...formData, [field]: e.target.value })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                  ))}
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      Party *
+                    </label>
+                    <select
+                      required
+                      value={formData.partyId}
+                      onChange={(e) => setFormData({ ...formData, partyId: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value="">Select a party</option>
+                      {parties.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} {p.shortName && `(${p.shortName})`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      Election *
+                    </label>
+                    <select
+                      required
+                      value={formData.electionId}
+                      onChange={(e) =>
+                        setFormData({ ...formData, electionId: e.target.value })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value="">Select an election</option>
+                      {elections.map((e) => (
+                        <option key={e.id} value={e.id}>
+                          {e.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex gap-3 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowModal(false);
+                        setError('');
+                      }}
+                      className="flex-1 border border-gray-300 rounded-lg py-2 hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="flex-1 bg-purple-600 text-white rounded-lg py-2 hover:bg-purple-700 transition disabled:bg-gray-400"
+                    >
+                      {submitting ? 'Adding...' : 'Add Candidate'}
+                    </button>
+                  </div>
+                </form>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </AdminRoute>
   );
 }

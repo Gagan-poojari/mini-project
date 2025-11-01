@@ -1,346 +1,274 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from 'react';
+import AdminRoute from '@/components/AdminRoute';
+import Link from 'next/link';
 
 export default function AdminElectionsPage() {
-  const router = useRouter();
   const [elections, setElections] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState("");
-  const [editingId, setEditingId] = useState(null);
-  const [editState, setEditState] = useState({});
-  const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
-  const [message, setMessage] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    startDate: '',
+    endDate: '',
+  });
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    loadElections();
+    fetchElections();
   }, []);
 
-  async function loadElections() {
-    setLoading(true);
-    setFetchError("");
+  const fetchElections = async () => {
     try {
-      const res = await fetch("/api/admin/elections", {
-        method: "GET",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      if (res.status === 401 || res.status === 403) {
-        // not authorized - redirect to login or elections
-        router.push("/login");
-        return;
+      const response = await fetch('/api/admin/elections');
+      const data = await response.json();
+      if (data.success) {
+        setElections(data.data);
       }
-
-      const payload = await res.json();
-      if (!payload.success) {
-        setFetchError(payload.message || "Failed to load elections");
-        setElections([]);
-      } else {
-        // ensure dates are normalized for date inputs (YYYY-MM-DD)
-        const normalized = payload.data.map((e) => ({
-          ...e,
-          startDateISO: toDateInputValue(e.startDate),
-          endDateISO: toDateInputValue(e.endDate),
-        }));
-        setElections(normalized);
-      }
-    } catch (err) {
-      console.error("Load elections error:", err);
-      setFetchError("Server error while loading elections");
+    } catch (error) {
+      console.error('Fetch error:', error);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  function toDateInputValue(when) {
-    if (!when) return "";
-    // Accept either Date string or Date object
-    const d = new Date(when);
-    // Build YYYY-MM-DD
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError('');
 
-  function startEdit(election) {
-    setEditingId(election.id);
-    setEditState({
-      title: election.title || "",
-      description: election.description || "",
-      startDate: election.startDateISO || "",
-      endDate: election.endDateISO || "",
-    });
-    setMessage("");
-  }
-
-  function cancelEdit() {
-    setEditingId(null);
-    setEditState({});
-    setMessage("");
-  }
-
-  function updateField(field, value) {
-    setEditState((s) => ({ ...s, [field]: value }));
-  }
-
-  async function saveEdit(id) {
-    setSaving(true);
-    setMessage("");
     try {
-      // Validate dates
-      if (!editState.title || !editState.startDate || !editState.endDate) {
-        setMessage("Title, start date and end date are required.");
-        setSaving(false);
-        return;
-      }
-
-      const body = {
-        title: editState.title,
-        description: editState.description,
-        // Convert to full ISO so Prisma can parse it (set to start of day)
-        startDate: new Date(editState.startDate).toISOString(),
-        endDate: new Date(editState.endDate).toISOString(),
-      };
-
-      const res = await fetch(`/api/admin/elections/${id}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+      const response = await fetch('/api/admin/elections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
       });
 
-      if (res.status === 401 || res.status === 403) {
-        setMessage("Unauthorized. Please login as admin.");
-        setSaving(false);
-        return;
+      const data = await response.json();
+
+      if (data.success) {
+        setShowModal(false);
+        setFormData({ title: '', description: '', startDate: '', endDate: '' });
+        fetchElections();
+      } else {
+        setError(data.message);
       }
-
-      const payload = await res.json();
-      if (!payload.success) {
-        setMessage(payload.message || "Failed to update election");
-        setSaving(false);
-        return;
-      }
-
-      // Update local list
-      setElections((prev) =>
-        prev.map((e) =>
-          e.id === id
-            ? {
-                ...payload.data,
-                startDateISO: toDateInputValue(payload.data.startDate),
-                endDateISO: toDateInputValue(payload.data.endDate),
-              }
-            : e
-        )
-      );
-
-      setMessage("Election updated");
-      setEditingId(null);
-      setEditState({});
     } catch (err) {
-      console.error("Save edit error:", err);
-      setMessage("Server error while updating");
+      setError('Failed to create election');
     } finally {
-      setSaving(false);
+      setSubmitting(false);
     }
-  }
+  };
 
-  async function handleDelete(id) {
-    if (!confirm("Are you sure you want to delete this election? This cannot be undone.")) return;
-    setDeletingId(id);
-    setMessage("");
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this election?')) return;
+
     try {
-      const res = await fetch(`/api/admin/elections/${id}`, {
-        method: "DELETE",
-        credentials: "include",
+      const response = await fetch(`/api/admin/elections?id=${id}`, {
+        method: 'DELETE',
       });
 
-      if (res.status === 401 || res.status === 403) {
-        setMessage("Unauthorized. Please login as admin.");
-        setDeletingId(null);
-        return;
+      const data = await response.json();
+      if (data.success) {
+        fetchElections();
       }
-
-      const payload = await res.json();
-      if (!payload.success) {
-        setMessage(payload.message || "Failed to delete election");
-        setDeletingId(null);
-        return;
-      }
-
-      // remove locally
-      setElections((prev) => prev.filter((e) => e.id !== id));
-      setMessage("Election deleted");
-    } catch (err) {
-      console.error("Delete error:", err);
-      setMessage("Server error while deleting");
-    } finally {
-      setDeletingId(null);
+    } catch (error) {
+      console.error('Delete error:', error);
     }
-  }
+  };
+
+  const getElectionStatus = (election) => {
+    const now = new Date();
+    const start = new Date(election.startDate);
+    const end = new Date(election.endDate);
+
+    if (now < start) return { status: 'Upcoming', color: 'bg-yellow-100 text-yellow-800' };
+    if (now > end) return { status: 'Ended', color: 'bg-gray-100 text-gray-800' };
+    return { status: 'Active', color: 'bg-green-100 text-green-800' };
+  };
 
   return (
-    <div className="mt-10 text-black max-w-6xl mx-auto py-10 px-4">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-semibold">Manage Elections</h1>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/admin"
-            className="text-sm px-3 py-2 border rounded hover:bg-gray-50"
-          >
-            Dashboard
-          </Link>
-          <Link
-            href="/admin/elections/create"
-            className="text-sm px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          >
-            + Create Election
-          </Link>
+    <AdminRoute>
+      <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900">Manage Elections</h1>
+              <Link href="/admin" className="text-blue-600 hover:underline mt-2 inline-block">
+                ← Back to Dashboard
+              </Link>
+            </div>
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
+            >
+              + Create Election
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-12">Loading...</div>
+          ) : elections.length === 0 ? (
+            <div className="bg-white rounded-lg shadow p-12 text-center">
+              <p className="text-gray-500 text-lg">No elections created yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {elections.map((election) => {
+                const statusInfo = getElectionStatus(election);
+                return (
+                  <div key={election.id} className="bg-white rounded-lg shadow p-6">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-2xl font-bold text-gray-900">
+                            {election.title}
+                          </h3>
+                          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${statusInfo.color}`}>
+                            {statusInfo.status}
+                          </span>
+                        </div>
+                        {election.description && (
+                          <p className="text-gray-600 mb-3">{election.description}</p>
+                        )}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-500">Start Date:</span>
+                            <p className="font-semibold">
+                              {new Date(election.startDate).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">End Date:</span>
+                            <p className="font-semibold">
+                              {new Date(election.endDate).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Candidates:</span>
+                            <p className="font-semibold">{election._count?.candidates || 0}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Total Votes:</span>
+                            <p className="font-semibold">{election._count?.votes || 0}</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Link
+                          href={`/results/${election.id}`}
+                          className="text-blue-600 hover:bg-blue-50 px-4 py-2 rounded"
+                        >
+                          View Results
+                        </Link>
+                        <button
+                          onClick={() => handleDelete(election.id)}
+                          className="text-red-600 hover:bg-red-50 px-4 py-2 rounded"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
+
+        {/* Create Election Modal */}
+        {showModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-md w-full p-6">
+              <h2 className="text-2xl font-bold mb-4">Create New Election</h2>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+                  {error}
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Election Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., City Council Election 2025"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Description
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows="3"
+                    placeholder="Brief description of the election"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Start Date & Time *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={formData.startDate}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    End Date & Time *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    required
+                    value={formData.endDate}
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowModal(false);
+                      setError('');
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+                  >
+                    {submitting ? 'Creating...' : 'Create Election'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
       </div>
-
-      {message && (
-        <div
-          className={`mb-4 p-3 rounded ${
-            message.startsWith("Election") || message.startsWith("Updated") || message.startsWith("Election updated") || message.startsWith("Election deleted")
-              ? "bg-green-50 text-green-800"
-              : "bg-red-50 text-red-800"
-          }`}
-        >
-          {message}
-        </div>
-      )}
-
-      {loading ? (
-        <div className="text-center py-20">Loading elections...</div>
-      ) : fetchError ? (
-        <div className="text-red-600">{fetchError}</div>
-      ) : elections.length === 0 ? (
-        <div className="text-gray-600">No elections found.</div>
-      ) : (
-        <div className="bg-white shadow rounded-lg overflow-hidden">
-          <table className="w-full table-auto">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="text-left px-4 py-3">Title</th>
-                <th className="text-left px-4 py-3">Description</th>
-                <th className="text-left px-4 py-3">Start Date</th>
-                <th className="text-left px-4 py-3">End Date</th>
-                <th className="px-4 py-3">Candidates</th>
-                <th className="px-4 py-3">Votes</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {elections.map((e) => (
-                <tr key={e.id} className="border-t">
-                  <td className="px-4 py-3">
-                    {editingId === e.id ? (
-                      <input
-                        className="border rounded px-2 py-1 w-full"
-                        value={editState.title}
-                        onChange={(ev) => updateField("title", ev.target.value)}
-                      />
-                    ) : (
-                      <div className="font-medium">{e.title}</div>
-                    )}
-                  </td>
-
-                  <td className="px-4 py-3 w-1/3">
-                    {editingId === e.id ? (
-                      <input
-                        className="border rounded px-2 py-1 w-full"
-                        value={editState.description}
-                        onChange={(ev) => updateField("description", ev.target.value)}
-                      />
-                    ) : (
-                      <div className="text-sm text-gray-600">{e.description || "-"}</div>
-                    )}
-                  </td>
-
-                  <td className="px-4 py-3">
-                    {editingId === e.id ? (
-                      <input
-                        type="date"
-                        className="border rounded px-2 py-1"
-                        value={editState.startDate}
-                        onChange={(ev) => updateField("startDate", ev.target.value)}
-                      />
-                    ) : (
-                      <div className="text-sm">{new Date(e.startDate).toLocaleDateString()}</div>
-                    )}
-                  </td>
-
-                  <td className="px-4 py-3">
-                    {editingId === e.id ? (
-                      <input
-                        type="date"
-                        className="border rounded px-2 py-1"
-                        value={editState.endDate}
-                        onChange={(ev) => updateField("endDate", ev.target.value)}
-                      />
-                    ) : (
-                      <div className="text-sm">{new Date(e.endDate).toLocaleDateString()}</div>
-                    )}
-                  </td>
-
-                  <td className="px-4 py-3 text-center">
-                    <div className="text-sm">{e._count?.candidates ?? (e.candidates?.length ?? 0)}</div>
-                  </td>
-
-                  <td className="px-4 py-3 text-center">
-                    <div className="text-sm">{e._count?.votes ?? 0}</div>
-                  </td>
-
-                  <td className="px-4 py-3 text-right space-x-2">
-                    {editingId === e.id ? (
-                      <>
-                        <button
-                          onClick={() => saveEdit(e.id)}
-                          disabled={saving}
-                          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60"
-                        >
-                          {saving ? "Saving..." : "Save"}
-                        </button>
-                        <button
-                          onClick={cancelEdit}
-                          className="px-3 py-1 bg-gray-100 rounded hover:bg-gray-200"
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => startEdit(e)}
-                          className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded hover:bg-yellow-200"
-                        >
-                          Edit
-                        </button>
-
-                        <button
-                          onClick={() => handleDelete(e.id)}
-                          disabled={deletingId === e.id}
-                          className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-60"
-                        >
-                          {deletingId === e.id ? "Deleting..." : "Delete"}
-                        </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
+    </AdminRoute>
   );
 }
