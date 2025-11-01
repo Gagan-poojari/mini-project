@@ -133,7 +133,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+    <div className="mt-10 min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto space-y-12">
         <header>
           <h1 className="text-4xl font-bold text-gray-900">Admin Dashboard</h1>

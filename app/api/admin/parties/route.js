@@ -1,97 +1,65 @@
-import prisma from '@/lib/prisma';
-import { getCurrentUser } from '@/lib/auth';
-import { errorResponse, successResponse } from '@/lib/utils';
-
-async function requireAdmin() {
-  const currentUser = await getCurrentUser();
-  
-  if (!currentUser) {
-    return { error: errorResponse('Not authenticated', 401) };
-  }
-  
-  const user = await prisma.user.findUnique({
-    where: { id: currentUser.id },
-  });
-  
-  if (!user || user.role !== 'ADMIN') {
-    return { error: errorResponse('Admin access required', 403) };
-  }
-  
-  return { user };
-}
+import prisma from '@/lib/prisma'
+import { verifyAuth } from '@/lib/auth'
+import { errorResponse, successResponse } from '@/lib/utils'
 
 // GET all parties
-export async function GET() {
+export async function GET(request) {
   try {
+    const user = await verifyAuth(request)
+    if (!user) return errorResponse('Unauthorized', 401)
+    if (user.role.toLowerCase() !== 'admin') return errorResponse('Forbidden', 403)
+
     const parties = await prisma.party.findMany({
       include: {
-        _count: {
-          select: { candidates: true },
-        },
+        _count: { select: { candidates: true } }
       },
-      orderBy: {
-        name: 'asc',
-      },
-    });
+      orderBy: { name: 'asc' },
+    })
 
-    return successResponse(parties);
+    return successResponse(parties)
   } catch (error) {
-    console.error('Get parties error:', error);
-    return errorResponse('Internal server error', 500);
+    console.error('Get parties error:', error)
+    return errorResponse('Internal server error', 500)
   }
 }
 
-// POST - Create new party (Admin only)
+// POST new party
 export async function POST(request) {
-  const authCheck = await requireAdmin();
-  if (authCheck.error) return authCheck.error;
+  const user = await verifyAuth(request)
+  if (!user) return errorResponse('Unauthorized', 401)
+  if (user.role.toLowerCase() !== 'admin') return errorResponse('Forbidden', 403)
 
   try {
-    const body = await request.json();
-    const { name, shortName, logo } = body;
+    const { name, shortName, logo } = await request.json()
 
-    if (!name) {
-      return errorResponse('Party name is required');
-    }
+    if (!name) return errorResponse('Party name is required')
 
     const party = await prisma.party.create({
-      data: {
-        name,
-        shortName,
-        logo,
-      },
-    });
+      data: { name, shortName, logo }
+    })
 
-    return successResponse(party, 'Party created successfully', 201);
+    return successResponse(party, 'Party created successfully', 201)
   } catch (error) {
-    if (error.code === 'P2002') {
-      return errorResponse('Party name already exists', 409);
-    }
-    console.error('Create party error:', error);
-    return errorResponse('Internal server error', 500);
+    if (error.code === 'P2002') return errorResponse('Party exists', 409)
+    return errorResponse('Internal server error', 500)
   }
 }
 
 // DELETE party
 export async function DELETE(request) {
-  const authCheck = await requireAdmin();
-  if (authCheck.error) return authCheck.error;
+  const user = await verifyAuth(request)
+  if (!user) return errorResponse('Unauthorized', 401)
+  if (user.role.toLowerCase() !== 'admin') return errorResponse('Forbidden', 403)
 
   try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    if (!id) return errorResponse('Party ID required')
 
-    if (!id) {
-      return errorResponse('Party ID is required');
-    }
+    await prisma.party.delete({ where: { id: parseInt(id) } })
 
-    await prisma.party.delete({
-      where: { id: parseInt(id) },
-    });
-
-    return successResponse(null, 'Party deleted successfully');
+    return successResponse(null, 'Party deleted successfully')
   } catch (error) {
-    console.error('Delete party error:', error);
-    return errorResponse('Internal server error', 500);
+    return errorResponse('Internal server error', 500)
   }
 }
