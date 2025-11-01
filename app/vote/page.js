@@ -122,14 +122,14 @@ export default function VotePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-blue-50">
         <div className="text-lg text-gray-600 animate-pulse">Loading elections...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8 bg-linear-to-br from-gray-50 to-blue-50">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-10">
           <h1 className="text-5xl font-extrabold text-gray-900 mb-2 tracking-tight">
@@ -304,7 +304,7 @@ export default function VotePage() {
                   <button
                     type="submit"
                     disabled={!selectedCandidate || submitting}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-10 rounded-lg font-bold hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-linear-to-r from-blue-600 to-purple-600 text-white py-3 px-10 rounded-lg font-bold hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-disabled={!selectedCandidate || submitting}
                   >
                     {submitting ? 'Submitting...' : 'Submit Vote'}

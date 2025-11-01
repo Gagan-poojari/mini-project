@@ -99,7 +99,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-slate-50 to-gray-100 py-12 px-6 lg:px-10">
+    <div className="min-h-screenbg-linear-to-br from-gray-950 via-gray-900 to-black text-white   py-12 px-6 lg:px-10">
       <div className="max-w-7xl mx-auto space-y-12">
         {/* Header */}
         <motion.header
@@ -108,8 +108,8 @@ export default function AdminDashboard() {
           className="flex flex-col md:flex-row md:items-center md:justify-between"
         >
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Admin Dashboard</h1>
-            <p className="text-gray-600 mt-1">
+            <h1 className="text-4xl font-bold text-gray-200 tracking-tight">Admin Dashboard</h1>
+            <p className="text-gray-300 mt-1">
               Welcome back, <span className="font-semibold">{user?.fname} {user?.lname}</span>
             </p>
           </div>
@@ -122,9 +122,9 @@ export default function AdminDashboard() {
         <motion.section
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="backdrop-blur-sm bg-white/80 rounded-xl shadow-lg border border-gray-200 p-8"
+          className="backdrop-blur-sm bg-white/0 rounded-xl shadow-lg border border-gray-200 p-8"
         >
-          <h2 className="text-2xl font-semibold text-gray-900 mb-6">🗳️ Create New Election</h2>
+          <h2 className="text-2xl font-semibold text-gray-200 mb-6">🗳️ Create New Election</h2>
           <form onSubmit={handleCreateElection} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input label="Title" value={title} onChange={setTitle} required />
@@ -136,11 +136,11 @@ export default function AdminDashboard() {
               <Input label="End Date" type="datetime-local" value={endDate} onChange={setEndDate} required />
             </div>
 
-            <div className="pt-4 border-t border-gray-200">
-              <h3 className="text-lg font-medium mb-3 text-gray-900">Candidates</h3>
+            <div className="pt-4 border-t border-slate-400">
+              <h3 className="text-lg font-medium mb-3 text-gray-200">Candidates</h3>
 
               {candidates.map((c, index) => (
-                <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                <div key={index} className="bg-green-600 hover:bg-green-700 border border-gray-200 rounded-lg p-4 mb-4">
                   <Input label="Name" value={c.name} onChange={(v) => updateCandidate(index, "name", v)} required />
                   <Input label="Profession" value={c.profession} onChange={(v) => updateCandidate(index, "profession", v)} />
                   <Input label="Education" value={c.education} onChange={(v) => updateCandidate(index, "education", v)} />
@@ -154,7 +154,7 @@ export default function AdminDashboard() {
               <button
                 type="button"
                 onClick={addCandidate}
-                className="mt-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-sm font-medium"
+                className="mt-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded-md text-sm font-medium"
               >
                 + Add Candidate
               </button>
@@ -178,7 +178,7 @@ export default function AdminDashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <SummaryCard title="Elections" count={elections.length} color="blue" href="/admin/elections" />
+          <SummaryCard title="Elections" count={elections.length} color="yellow" href="/admin/elections" />
           <SummaryCard title="Parties" count={parties.length} color="green" href="/admin/parties" />
           <SummaryCard title="Candidates" count={elections.reduce((sum, e) => sum + (e._count?.candidates || 0), 0)} color="purple" href="/admin/candidates" />
         </div>
@@ -222,8 +222,8 @@ function Input({ label, value, onChange, type = "text", textarea = false, requir
 
 function SummaryCard({ title, count, color, href }) {
   return (
-    <motion.div whileHover={{ y: -5 }} className="bg-white shadow-md rounded-xl p-6 border border-gray-100 transition">
-      <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+    <motion.div whileHover={{ y: -5 }} className="bg-white/0 shadow-md rounded-xl p-6 border border-gray-100 transition">
+      <h3 className="text-lg font-semibold text-gray-200">{title}</h3>
       <p className={`text-4xl font-bold text-${color}-600 mt-2`}>{count}</p>
       <Link href={href} className={`text-sm text-${color}-600 hover:underline mt-3 inline-block`}>
         Manage {title} →
@@ -234,9 +234,9 @@ function SummaryCard({ title, count, color, href }) {
 
 function RecentElections({ elections }) {
   return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-      <div className="px-6 py-4 bg-gray-50 border-b">
-        <h2 className="text-lg font-semibold text-gray-900">Recent Elections</h2>
+    <div className="bg-white/0 rounded-xl shadow-md border border-gray-100 overflow-hidden">
+      <div className="px-6 py-4 bg-gray-50/0 border-b">
+        <h2 className="text-lg font-semibold text-gray-200">Recent Elections</h2>
       </div>
       <div className="p-6 space-y-3">
         {elections.length === 0 ? (
@@ -244,8 +244,8 @@ function RecentElections({ elections }) {
         ) : (
           elections.slice(0, 5).map((e) => (
             <div key={e.id} className="border-l-4 border-blue-500 pl-4">
-              <h3 className="font-medium text-gray-900">{e.title}</h3>
-              <p className="text-sm text-gray-600">
+              <h3 className="font-medium text-gray-100">{e.title}</h3>
+              <p className="text-sm text-gray-300">
                 {new Date(e.startDate).toLocaleDateString()} – {new Date(e.endDate).toLocaleDateString()}
               </p>
               <p className="text-sm text-gray-500">
@@ -261,21 +261,21 @@ function RecentElections({ elections }) {
 
 function RecentParties({ parties }) {
   return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-      <div className="px-6 py-4 bg-gray-50 border-b">
-        <h2 className="text-lg font-semibold text-gray-900">Political Parties</h2>
+    <div className="bg-white/0 rounded-xl shadow-md border border-gray-100 overflow-hidden">
+      <div className="px-6 py-4 bg-gray-50/0 border-b">
+        <h2 className="text-lg font-semibold text-gray-200">Political Parties</h2>
       </div>
       <div className="p-6 space-y-3">
         {parties.length === 0 ? (
           <p className="text-gray-500">No parties registered yet</p>
         ) : (
           parties.slice(0, 5).map((p) => (
-            <div key={p.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-md">
+            <div key={p.id} className="flex justify-between items-center bg-gray-50/0 p-3 rounded-md">
               <div>
-                <p className="font-semibold text-gray-900">{p.name}</p>
-                {p.shortName && <p className="text-sm text-gray-600">({p.shortName})</p>}
+                <p className="font-semibold text-gray-100">{p.name}</p>
+                {p.shortName && <p className="text-sm text-gray-200">({p.shortName})</p>}
               </div>
-              <span className="text-sm text-gray-700">{p._count?.candidates || 0} candidates</span>
+              <span className="text-sm text-gray-300">{p._count?.candidates || 0} candidates</span>
             </div>
           ))
         )}

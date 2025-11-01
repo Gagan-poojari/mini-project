@@ -43,8 +43,8 @@ export default function ResultsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="text-xl font-medium text-gray-700 animate-pulse">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-950 via-gray-900 to-black text-white">
+        <div className="text-xl font-medium text-gray-200 animate-pulse">
           Loading election results...
         </div>
       </div>
@@ -53,21 +53,21 @@ export default function ResultsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-white">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-red-50 to-white">
         <div className="text-xl text-red-600 font-semibold">{error}</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8 bg-linear-to-br from-gray-950 via-gray-900 to-black text-white">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-10">
-          <h1 className="text-5xl font-extrabold text-gray-900 mb-2 tracking-tight">
+          <h1 className="text-6xl font-extrabold mb-2 bg-linear-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
             Election Results
           </h1>
-          <p className="text-gray-600 text-lg">View live and past election outcomes</p>
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-gray-300 text-lg">View live and past election outcomes</p>
+          <p className="text-sm text-gray-300 mt-2">
             Updates automatically every 10 seconds ⏱️
           </p>
         </div>
@@ -83,13 +83,13 @@ export default function ResultsPage() {
               return (
                 <div
                   key={election.id}
-                  className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
+                  className="bg-white/0 border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden"
                 >
                   {/* Header */}
-                  <div className="px-6 py-4 bg-gray-50 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                  <div className="px-6 py-4 bg-gray-50/0 text-gray-200 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-3 mb-1">
-                        <h2 className="text-2xl font-bold text-gray-900">{election.title}</h2>
+                        <h2 className="text-2xl font-bold text-gray-200">{election.title}</h2>
                         <span
                           className={`px-3 py-1 rounded-full text-sm font-semibold ${statusInfo.color}`}
                         >
@@ -97,7 +97,7 @@ export default function ResultsPage() {
                         </span>
                       </div>
                       {election.description && (
-                        <p className="text-gray-600 text-sm max-w-xl">{election.description}</p>
+                        <p className="text-gray-200 text-sm max-w-xl">{election.description}</p>
                       )}
                     </div>
                     <Link
@@ -110,27 +110,27 @@ export default function ResultsPage() {
 
                   {/* Stats */}
                   <div className="p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-                    <div className="bg-gray-50 rounded-lg p-5 hover:bg-gray-100 transition">
-                      <p className="text-gray-500 text-sm mb-1">Total Votes</p>
+                    <div className="bg-gray-50/0 border border-gray-50 rounded-lg p-5 transition">
+                      <p className="text-gray-200 text-sm mb-1">Total Votes</p>
                       <p className="text-3xl font-bold text-blue-600">
                         {election._count?.votes || 0}
                       </p>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-5 hover:bg-gray-100 transition">
-                      <p className="text-gray-500 text-sm mb-1">Candidates</p>
+                    <div className="bg-gray-50/0 border border-gray-50 rounded-lg p-5 transition">
+                      <p className="text-gray-200 text-sm mb-1">Candidates</p>
                       <p className="text-3xl font-bold text-purple-600">
                         {election._count?.candidates || 0}
                       </p>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-5 hover:bg-gray-100 transition">
-                      <p className="text-gray-500 text-sm mb-1">Start Date</p>
-                      <p className="text-lg font-semibold text-gray-900">
+                    <div className="bg-gray-50/0 border border-gray-50 rounded-lg p-5 transition">
+                      <p className="text-gray-200 text-sm mb-1">Start Date</p>
+                      <p className="text-lg font-semibold text-gray-200">
                         {new Date(election.startDate).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="bg-gray-50 rounded-lg p-5 hover:bg-gray-100 transition">
-                      <p className="text-gray-500 text-sm mb-1">End Date</p>
-                      <p className="text-lg font-semibold text-gray-900">
+                    <div className="bg-gray-50/0 border border-gray-50 rounded-lg p-5 transition">
+                      <p className="text-gray-200 text-sm mb-1">End Date</p>
+                      <p className="text-lg font-semibold text-gray-200">
                         {new Date(election.endDate).toLocaleDateString()}
                       </p>
                     </div>

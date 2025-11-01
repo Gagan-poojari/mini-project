@@ -6,7 +6,7 @@ import { FiPlay } from "react-icons/fi";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-linear-to-b from-[#050508] via-[#0b0b0f] to-[#06060a] text-white antialiased overflow-hidden">
+    <main className="min-h-screen bg-linear-to-br from-gray-950 via-gray-900 to-black text-white antialiased overflow-hidden">
       {/* HERO SECTION */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 -z-10">

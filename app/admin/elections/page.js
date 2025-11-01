@@ -96,7 +96,7 @@ export default function AdminElectionsPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900">Manage Elections</h1>
+              <h1 className="text-4xl font-bold text-gray-200">Manage Elections</h1>
               <Link href="/admin" className="text-blue-600 hover:underline mt-2 inline-block">
                 ← Back to Dashboard
               </Link>
@@ -112,19 +112,19 @@ export default function AdminElectionsPage() {
           {loading ? (
             <div className="text-center py-12">Loading...</div>
           ) : elections.length === 0 ? (
-            <div className="bg-white rounded-lg shadow p-12 text-center">
-              <p className="text-gray-500 text-lg">No elections created yet</p>
+            <div className="bg-white/0 text-gray-200 rounded-lg shadow p-12 text-center">
+              <p className="text-gray-200 text-lg">No elections created yet</p>
             </div>
           ) : (
             <div className="space-y-4">
               {elections.map((election) => {
                 const statusInfo = getElectionStatus(election);
                 return (
-                  <div key={election.id} className="bg-white rounded-lg shadow p-6">
+                  <div key={election.id} className="bg-white/0 text-gray-200 rounded-lg border border-gray-300 shadow p-6">
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-2xl font-bold text-gray-900">
+                          <h3 className="text-2xl font-bold text-gray-200">
                             {election.title}
                           </h3>
                           <span className={`px-3 py-1 rounded-full text-sm font-semibold ${statusInfo.color}`}>
@@ -132,17 +132,17 @@ export default function AdminElectionsPage() {
                           </span>
                         </div>
                         {election.description && (
-                          <p className="text-gray-600 mb-3">{election.description}</p>
+                          <p className="text-gray-200 mb-3">{election.description}</p>
                         )}
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                           <div>
-                            <span className="text-gray-500">Start Date:</span>
+                            <span className="text-gray-200">Start Date:</span>
                             <p className="font-semibold">
                               {new Date(election.startDate).toLocaleDateString()}
                             </p>
                           </div>
                           <div>
-                            <span className="text-gray-500">End Date:</span>
+                            <span className="text-gray-200">End Date:</span>
                             <p className="font-semibold">
                               {new Date(election.endDate).toLocaleDateString()}
                             </p>
@@ -181,8 +181,8 @@ export default function AdminElectionsPage() {
 
         {/* Create Election Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-md w-full p-6">
+          <div className="fixed inset-0 bg-gray-900/80 flex items-center justify-center p-4 z-50">
+            <div className="bg-gray-800 text-gray-200 rounded-lg max-w-md w-full p-6">
               <h2 className="text-2xl font-bold mb-4">Create New Election</h2>
 
               {error && (
@@ -193,7 +193,7 @@ export default function AdminElectionsPage() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-200 mb-1">
                     Election Title *
                   </label>
                   <input
@@ -207,7 +207,7 @@ export default function AdminElectionsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-200 mb-1">
                     Description
                   </label>
                   <textarea
@@ -220,7 +220,7 @@ export default function AdminElectionsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-200 mb-1">
                     Start Date & Time *
                   </label>
                   <input
@@ -233,7 +233,7 @@ export default function AdminElectionsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-200 mb-1">
                     End Date & Time *
                   </label>
                   <input

@@ -103,12 +103,12 @@ export default function AdminCandidatesPage() {
 
   return (
     <AdminRoute>
-      <div className="min-h-screen bg-linear-to-br from-gray-50 via-purple-50 to-white py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen  bg-linear-to-br from-gray-950 via-gray-900 to-black text-white py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight">
+              <h1 className="text-4xl font-extrabold text-gray-200 tracking-tight">
                 Manage Candidates
               </h1>
               <Link href="/admin" className="text-blue-600 hover:underline mt-2 inline-block">
@@ -126,13 +126,13 @@ export default function AdminCandidatesPage() {
 
           {/* Filter */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-200 mb-2">
               Filter by Election
             </label>
             <select
               value={selectedElection}
               onChange={(e) => setSelectedElection(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="px-4 py-2 border border-gray-300 rounded-lg bg-white/0 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               <option value="">All Elections</option>
               {elections.map((e) => (
@@ -145,9 +145,9 @@ export default function AdminCandidatesPage() {
 
           {/* Candidates */}
           {loading ? (
-            <div className="text-center py-16 text-gray-500">Loading candidates...</div>
+            <div className="text-center py-16 text-gray-200">Loading candidates...</div>
           ) : filteredCandidates.length === 0 ? (
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-md p-12 text-center border border-gray-100">
+            <div className="bg-white/0 backdrop-blur-sm rounded-2xl shadow-md p-12 text-center border border-gray-100">
               <p className="text-gray-500 text-lg">
                 No candidates found yet. Add your first candidate!
               </p>
@@ -159,9 +159,9 @@ export default function AdminCandidatesPage() {
                   key={candidate.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-white/80 backdrop-blur-sm border border-gray-100 shadow-md hover:shadow-lg rounded-2xl p-6 transition-all duration-300"
+                  className="bg-white/0 backdrop-blur-sm border border-gray-100 shadow-md hover:shadow-lg rounded-2xl p-6 transition-all duration-300"
                 >
-                  <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                  <h3 className="text-xl font-semibold text-gray-200 mb-1">
                     {candidate.name}
                   </h3>
                   <p className="text-sm text-gray-500 mb-4">{candidate.profession}</p>
@@ -180,7 +180,7 @@ export default function AdminCandidatesPage() {
                       <span className="font-medium text-gray-600">Election:</span>{' '}
                       {candidate.election.title}
                     </p>
-                    <p className="text-purple-700 font-semibold">
+                    <p className="text-emerald-300 font-semibold">
                       Votes: {candidate._count?.votes || 0}
                     </p>
                   </div>
@@ -207,12 +207,12 @@ export default function AdminCandidatesPage() {
               exit={{ opacity: 0 }}
             >
               <motion.div
-                className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md"
+                className="bg-gray-800/80 rounded-2xl shadow-2xl p-8 w-full max-w-md"
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.9, opacity: 0 }}
               >
-                <h2 className="text-2xl font-bold mb-6 text-gray-800">
+                <h2 className="text-2xl font-bold mb-6 text-gray-200">
                   Add New Candidate
                 </h2>
 
@@ -225,7 +225,7 @@ export default function AdminCandidatesPage() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {['name', 'profession', 'education'].map((field) => (
                     <div key={field}>
-                      <label className="block text-sm font-semibold text-gray-700 mb-1 capitalize">
+                      <label className="block text-sm font-semibold text-gray-200 mb-1 capitalize">
                         {field} *
                       </label>
                       <input
@@ -241,14 +241,14 @@ export default function AdminCandidatesPage() {
                   ))}
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-200 mb-1">
                       Party *
                     </label>
                     <select
                       required
                       value={formData.partyId}
                       onChange={(e) => setFormData({ ...formData, partyId: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                      className="w-full px-3 py-2 bg-white/0 text-gray-200 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                     >
                       <option value="">Select a party</option>
                       {parties.map((p) => (
@@ -260,18 +260,18 @@ export default function AdminCandidatesPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    <label className="block text-sm font-semibold text-gray-200 mb-1">
                       Election *
                     </label>
-                    <select
+                    <select 
                       required
                       value={formData.electionId}
                       onChange={(e) =>
                         setFormData({ ...formData, electionId: e.target.value })
                       }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                      className="w-full bg-white/0 text-gray-200 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                     >
-                      <option value="">Select an election</option>
+                      <option className='bg-white/0 text-gray-200' value="">Select an election</option>
                       {elections.map((e) => (
                         <option key={e.id} value={e.id}>
                           {e.title}
@@ -287,7 +287,7 @@ export default function AdminCandidatesPage() {
                         setShowModal(false);
                         setError('');
                       }}
-                      className="flex-1 border border-gray-300 rounded-lg py-2 hover:bg-gray-50"
+                      className="flex-1 border bg-rose-800 text-gray-200 border-gray-300 rounded-lg py-2 hover:border hover:border-blue-600 hover:bg-gray-50 hover:text-black"
                     >
                       Cancel
                     </button>
