@@ -13,11 +13,10 @@ export const metadata = {
 
 export default async function RootLayout({ children }) {
   let user = null;
-
   try {
     const currentUser = await getCurrentUser();
     if (currentUser) {
-      const voter = await prisma.User.findUnique({
+      const userData = await prisma.user.findUnique({
         where: { id: currentUser.id },
         select: {
           id: true,
@@ -25,10 +24,9 @@ export default async function RootLayout({ children }) {
           lname: true,
           email: true,
           role: true,
-          votes: true,
         },
       });
-      user = voter;
+      user = userData;
     }
   } catch (error) {
     console.error('Layout auth error:', error);
@@ -38,7 +36,7 @@ export default async function RootLayout({ children }) {
     <html lang="en">
       <body className={inter.className}>
         <Navbar user={user} />
-        <main className="min-h-screen bg-gray-50">
+        <main className="min-h-screen">
           {children}
         </main>
       </body>

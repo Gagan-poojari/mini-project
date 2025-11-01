@@ -3,7 +3,9 @@ import { errorResponse, successResponse } from '@/lib/utils';
 
 export async function GET(request, { params }) {
   try {
-    const electionId = parseInt(params.id);
+    // Await params in Next.js 15+
+    const resolvedParams = await params;
+    const electionId = parseInt(resolvedParams.id);
 
     const candidates = await prisma.candidate.findMany({
       where: { electionId },
